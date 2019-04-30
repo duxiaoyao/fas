@@ -1,5 +1,4 @@
 FastApi Spike
-
 Python 3.7+: Type hints, dataclass, asyncio
 ASGI: Uvicorn, Starlette
 REST API: OpenAPI, JSON Schema
