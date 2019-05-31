@@ -25,10 +25,10 @@
         },
         "fastapi": {
             "hashes": [
-                "sha256:1f886e96e4bf81d6b9f90b7477c8c661a84fb0a3c1313c339b0203f7c21e908f",
-                "sha256:889ba0e46d23e7a396075ceff146088365ace80f225f335562a9101e7015345d"
+                "sha256:1a7d893944e4c67e301ab87299231076b317f52ec11762be64f1d831155f0f30",
+                "sha256:af41e8ebb7397d5735b78c2fea2ca63884ddc3330499c013cdec89395cc40a25"
             ],
-            "version": "==0.20.0"
+            "version": "==0.27.0"
         },
         "h11": {
             "hashes": [
@@ -39,30 +39,28 @@
         },
         "httptools": {
             "hashes": [
-                "sha256:9851b2eae0bcb397804069eb0a462334ace67a51abfdc705619b0fcf775db5c8",
                 "sha256:e00cbd7ba01ff748e494248183abc6e153f49181169d8a3d41bb49132ca01dfc"
             ],
-            "markers": "sys_platform != 'win32' and sys_platform != 'cygwin' and platform_python_implementation != 'pypy'",
             "version": "==0.0.13"
         },
         "pydantic": {
             "hashes": [
-                "sha256:1205cd1213e8acee40a9ad7160b24de74484fd79ec3f09150b255896a3f506ab",
-                "sha256:58b71804e9a6b4e1ccf8b3dbbca8c0f9cf4b494e5bea219a96e2e2ecb5af688e"
+                "sha256:b72e0df2463cee746cf42639845d4106c19f30136375e779352d710e69617731",
+                "sha256:dab99d3070e040b8b2e987dfbe237350ab92d5d57a22d4e0e268ede2d85c7964"
             ],
-            "version": "==0.23"
+            "version": "==0.26"
         },
         "starlette": {
             "hashes": [
-                "sha256:9d48b35d1fc7521d59ae53c421297ab3878d3c7cd4b75266d77f6c73cccb78bb"
+                "sha256:d313433ef5cc38e0a276b59688ca2b11b8f031c78808c1afdf9d55cb86f34590"
             ],
-            "version": "==0.11.1"
+            "version": "==0.12.0"
         },
         "uvicorn": {
             "hashes": [
-                "sha256:181d47abddedd0f6e23eaeed97976bdce9ea1dbff0ec12385309cf4835783f6a"
+                "sha256:c10da7a54a6552279870900c881a2f1726314e2dd6270d4d3f9251683c643783"
             ],
-            "version": "==0.7.0"
+            "version": "==0.7.1"
         },
         "uvloop": {
             "hashes": [
@@ -77,7 +75,6 @@
                 "sha256:c48692bf4587ce281d641087658eca275a5ad3b63c78297bbded96570ae9ce8f",
                 "sha256:fefc3b2b947c99737c348887db2c32e539160dcbeb7af9aa6b53db7a283538fe"
             ],
-            "markers": "sys_platform != 'win32' and sys_platform != 'cygwin' and platform_python_implementation != 'pypy'",
             "version": "==0.12.2"
         },
         "websockets": {
