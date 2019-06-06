@@ -1,0 +1,17 @@
+[default]
+db_conn = {host="localhost", port=5432, database="kbase", user="eric"}
+
+[development]
+value = "value for development"
+
+[staging]
+value = "value for staging"
+
+[testing]
+value = "value for testing"
+
+[production]
+value = "value for production"
+
+[global]
+value = "value for global"

@@ -1,6 +1,3 @@
-# Ignore dynaconf secret files
-.secrets.*
-
 # PyCharm
 .idea
 *.iml
@@ -128,6 +125,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-# Ignore dynaconf secret files
-.secrets.*
