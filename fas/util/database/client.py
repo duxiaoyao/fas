@@ -66,15 +66,9 @@ if __name__ == '__main__':
 
 
     async def main():
-        try:
-            await open_database_connection_pool(**settings.DB)
-            conn = await acquire_database_connection()
-            try:
+        async with open_database_connection_pool(**settings.DB):
+            async with acquire_database_connection() as conn:
                 organizations = await conn.fetch('SELECT * FROM organization')
-            finally:
-                await release_database_connection(conn)
-        finally:
-            await close_database_connection_pool()
         print(organizations)
 
 

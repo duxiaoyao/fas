@@ -10,12 +10,12 @@ LOGGER = logging.getLogger(__name__)
 _conn_pool: Optional[Pool] = None
 
 
-async def open_database_connection_pool(**connect_kwargs) -> Pool:
+def open_database_connection_pool(**connect_kwargs) -> Pool:
     global _conn_pool
 
     if not _conn_pool:
         try:
-            _conn_pool = await create_pool(timeout=1, **connect_kwargs)
+            _conn_pool = create_pool(timeout=1, **connect_kwargs)
         except Exception:
             LOGGER.exception(f'cannot open database connection pool: config={connect_kwargs}')
             raise
@@ -41,9 +41,9 @@ async def close_database_connection_pool():
         _conn_pool = None
 
 
-async def acquire_database_connection(*, timeout=1) -> Connection:
+def acquire_database_connection(*, timeout=1) -> Connection:
     try:
-        conn = await _conn_pool.acquire(timeout=timeout)
+        conn = _conn_pool.acquire(timeout=timeout)
     except Exception:
         LOGGER.exception(f'cannot acquire database connection from pool: pool={_conn_pool}')
         raise
