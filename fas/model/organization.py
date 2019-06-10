@@ -6,5 +6,6 @@ class Organization(BaseModel):
     name: str
 
 
-async def list_organizations(db_conn):
-    return await db_conn.fetch('SELECT * FROM organization')
+async def list_organizations(db):
+    rows = await db.fetch('SELECT * FROM organization')
+    return [Organization(**row) for row in rows]

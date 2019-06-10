@@ -1,18 +1,17 @@
 import logging
+from typing import List
 
-from asyncpg import Connection
 from fastapi import Depends, APIRouter
 
-from fas.model import list_organizations
-from .db import db_connection
+from fas.model import Organization, list_organizations
+from fas.util.database import Connection
+from .db import get_db
 
 LOGGER = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-@router.get("/")
-async def list_organizations_(db_conn: Connection = Depends(db_connection)):
-    organizations = await list_organizations(db_conn)
-    LOGGER.debug(f'{organizations}')
-    return organizations
+@router.get('/', response_model=List[Organization])
+async def list_organizations_(db: Connection = Depends(get_db)):
+    return await list_organizations(db)

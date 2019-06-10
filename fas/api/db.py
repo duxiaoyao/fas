@@ -1,9 +1,9 @@
 from starlette.requests import Request
 
-from fas.database import acquire_database_connection
+from fas.util.database import acquire_database_connection
 
 
-async def db_connection(request: Request):
-    if not request.state.db_conn:
-        request.state.db_conn = await acquire_database_connection()
-    return request.state.db_conn
+async def get_db(request: Request):
+    if not request.state.db:
+        request.state.db = await acquire_database_connection()
+    return request.state.db

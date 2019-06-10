@@ -1,26 +1,26 @@
 import asyncio
 import logging
+from typing import Optional
 
 from asyncpg import create_pool, Connection
 from asyncpg.pool import Pool
-from dynaconf import settings
 
 LOGGER = logging.getLogger(__name__)
 
-_conn_pool = None
+_conn_pool: Optional[Pool] = None
 
 
-async def open_database_connection_pool() -> Pool:
+async def open_database_connection_pool(**connect_kwargs) -> Pool:
     global _conn_pool
 
     if not _conn_pool:
         try:
-            _conn_pool = await create_pool(timeout=1, **settings.DB_CONN)
+            _conn_pool = await create_pool(timeout=1, **connect_kwargs)
         except Exception:
-            LOGGER.exception(f'cannot open database connection pool: config={settings.DB_CONN}')
+            LOGGER.exception(f'cannot open database connection pool: config={connect_kwargs}')
             raise
         else:
-            LOGGER.debug(f'opened database connection pool: config={settings.DB_CONN}, pool={_conn_pool}')
+            LOGGER.debug(f'opened database connection pool: config={connect_kwargs}, pool={_conn_pool}')
     return _conn_pool
 
 

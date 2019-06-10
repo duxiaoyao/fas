@@ -1,6 +1,6 @@
 [default]
 DEBUG = true
-db_conn = {host="localhost", port=5432, database="kbase", user="eric"}
+db = {host="localhost", port=5432, database="kbase", user="eric"}
 
 [development]
 value = "value for development"
