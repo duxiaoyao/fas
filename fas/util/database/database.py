@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from types import TracebackType
-from typing import Any, Dict, Type, Optional
+from typing import Any, Dict, Type, Optional, Generator
 
 import asyncpg
 
@@ -57,6 +57,29 @@ class DBPool:
         await self.close()
 
     def acquire(self, acquire_timeout: float = None, release_timeout: float = None) -> DBConnection:
+        """Acquire a database connection from the pool.
+
+        :param float acquire_timeout: A timeout for acquiring a Connection.
+        :param float release_timeout: A timeout for releasing a Connection.
+        :return: An instance of :class:`~DBConnection`.
+
+        Can be used in an ``await`` expression or with an ``async with`` block.
+
+        .. code-block:: python
+
+            async with pool.acquire() as con:
+                await con.execute(...)
+
+        Or:
+
+        .. code-block:: python
+
+            con = await pool.acquire()
+            try:
+                await con.execute(...)
+            finally:
+                await pool.release(con)
+        """
         return DBConnection(self, acquire_timeout=acquire_timeout, release_timeout=release_timeout)
 
     async def _acquire(self, *, timeout: float = None) -> asyncpg.Connection:
@@ -112,14 +135,23 @@ class DBConnection:
             self._conn = None
 
     async def __aenter__(self) -> DBConnection:
+        """
+        Called when entering `async with db_pool.acquire()`
+        """
         await self.acquire()
         return self
 
     async def __aexit__(self, exc_type: Type[BaseException] = None, exc_value: BaseException = None,
                         traceback: TracebackType = None) -> None:
+        """
+        Called when exiting `async with db_pool.acquire()`
+        """
         await self.release()
 
-    def __await__(self) -> DBConnection:
+    def __await__(self) -> Generator:
+        """
+        Called if using `db_connection = await db_pool.acquire()`
+        """
         return self.acquire().__await__()
 
 

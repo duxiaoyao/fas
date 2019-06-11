@@ -30,7 +30,7 @@ async def release_database_connection(request: Request, call_next):
 
 @app.get('/')
 def read_root():
-    return {"Hello": "World"}
+    return {'Hello': 'World'}
 
 
 app.include_router(organization.router, prefix='/organizations', tags=['organizations'])
