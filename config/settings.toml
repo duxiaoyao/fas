@@ -1,9 +1,9 @@
 [default]
 DEBUG = true
-db = {host="localhost", port=5432, database="kbase", user="eric"}
+db = {host='localhost', port=5432, user='eric', database='kbase'}
 
 [development]
-value = "value for development"
+db = {min_size=2, max_size=5, dynaconf_merge=true}
 
 [staging]
 value = "value for staging"
@@ -11,9 +11,9 @@ value = "value for staging"
 [testing]
 value = "value for testing"
 
+
 [production]
 DEBUG = false
-value = "value for production"
 
 [global]
 value = "value for global"

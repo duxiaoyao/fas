@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import BaseModel
 
 
@@ -6,6 +8,5 @@ class Organization(BaseModel):
     name: str
 
 
-async def list_organizations(db):
-    rows = await db.fetch('SELECT * FROM organization')
-    return [Organization(**row) for row in rows]
+async def list_organizations(db) -> List[Organization]:
+    return await db.list('SELECT * FROM organization', to_cls=Organization)
