@@ -7,6 +7,8 @@ from typing import Any, Dict, Type, Optional, Generator
 
 import asyncpg
 
+from .interface import DBInterface
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -56,12 +58,12 @@ class DBPool:
                         traceback: TracebackType = None) -> None:
         await self.close()
 
-    def acquire(self, acquire_timeout: float = None, release_timeout: float = None) -> DBConnection:
+    def acquire(self, acquire_timeout: float = None, release_timeout: float = None) -> DBClient:
         """Acquire a database connection from the pool.
 
         :param float acquire_timeout: A timeout for acquiring a Connection.
         :param float release_timeout: A timeout for releasing a Connection.
-        :return: An instance of :class:`~DBConnection`.
+        :return: An instance of :class:`~DBClient`.
 
         Can be used in an ``await`` expression or with an ``async with`` block.
 
@@ -80,7 +82,7 @@ class DBPool:
             finally:
                 await pool.release(con)
         """
-        return DBConnection(self, acquire_timeout=acquire_timeout, release_timeout=release_timeout)
+        return DBClient(self, acquire_timeout=acquire_timeout, release_timeout=release_timeout)
 
     async def _acquire(self, *, timeout: float = None) -> asyncpg.Connection:
         assert self._pool is not None, 'Connection pool is not opened'
@@ -104,25 +106,22 @@ class DBPool:
             LOGGER.debug(f'Released connection: conn={conn}, pool={self._pool}, release_timeout={timeout}')
 
 
-class DBConnection:
+class DBClient(DBInterface):
     def __init__(self, pool: DBPool, acquire_timeout: float = None, release_timeout: float = None) -> None:
         self._pool: DBPool = pool
         self._acquire_timeout: float = acquire_timeout
         self._release_timeout: float = release_timeout
         self._conn: Optional[asyncpg.Connection] = None
 
-    async def list(self, sql, to_cls=None, **kwargs):
-        rows = await self._query(sql, **kwargs)
-        return [to_cls(**row) for row in rows] if to_cls else rows
-
-    async def _query(self, sql, **kwargs):
-        return await self._conn.fetch(sql, **kwargs)
+    @property
+    def conn(self) -> asyncpg.Connection:
+        return self._conn
 
     @property
     def is_connected(self) -> bool:
         return self._conn is not None
 
-    async def acquire(self) -> DBConnection:
+    async def acquire(self) -> DBClient:
         assert self._conn is None, 'Connection is already acquired'
         self._conn = await self._pool._acquire(timeout=self._acquire_timeout)
         return self
@@ -134,7 +133,7 @@ class DBConnection:
         finally:
             self._conn = None
 
-    async def __aenter__(self) -> DBConnection:
+    async def __aenter__(self) -> DBClient:
         """
         Called when entering `async with db_pool.acquire()`
         """
@@ -153,41 +152,3 @@ class DBConnection:
         Called if using `db_connection = await db_pool.acquire()`
         """
         return self.acquire().__await__()
-
-
-if __name__ == '__main__':
-    async def main():
-        from dynaconf import settings
-
-        pool = DBPool(**settings.DB)
-        await pool.open()
-        try:
-            async with DBConnection(pool) as conn:
-                print(await conn.list('SELECT 1111 FROM organization'))
-
-            conn = await pool.acquire()
-            try:
-                print(await conn.list('SELECT 1112 FROM organization'))
-            finally:
-                await conn.release()
-
-            async with pool.acquire() as conn:
-                print(await conn.list('SELECT 1113 FROM organization'))
-        finally:
-            await pool.close()
-
-        async with DBPool(**settings.DB) as pool:
-            async with DBConnection(pool) as conn:
-                print(await conn.list('SELECT 2211 FROM organization'))
-
-            conn = await pool.acquire()
-            try:
-                print(await conn.list('SELECT 2212 FROM organization'))
-            finally:
-                await conn.release()
-
-            async with pool.acquire() as conn:
-                print(await conn.list('SELECT 2213 FROM organization'))
-
-
-    asyncio.run(main())

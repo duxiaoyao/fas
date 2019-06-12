@@ -1,7 +1,7 @@
-from .database import DBPool
-from .database import DBConnection
+from .client import DBPool
+from .client import DBClient
 
 __all__ = [
     DBPool.__name__,
-    DBConnection.__name__,
+    DBClient.__name__,
 ]
