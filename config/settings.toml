@@ -1,5 +1,5 @@
 [default]
-DEBUG = true
+debug = true
 db = {host='localhost', port=5432, user='eric', database='kbase'}
 
 [development]
@@ -13,7 +13,7 @@ value = 'value for testing'
 
 
 [production]
-DEBUG = false
+debug = false
 
 [global]
 value = 'value for global'

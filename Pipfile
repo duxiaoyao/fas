@@ -8,7 +8,6 @@ verify_ssl = true
 [packages]
 fastapi = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 uvicorn = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
-databases = {extras = ["postgresql"],index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 dynaconf = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 asyncpg = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 buildpg = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
