@@ -4,7 +4,7 @@ from fastapi import APIRouter, Body, HTTPException
 from starlette.requests import Request
 from starlette.status import HTTP_201_CREATED
 
-from fas.model import *
+from fas.model.organization import *
 
 router = APIRouter()
 

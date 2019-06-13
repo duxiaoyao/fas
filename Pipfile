@@ -4,6 +4,8 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+databases = {extras = ["postgresql"],index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
+pytest = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 
 [packages]
 fastapi = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}

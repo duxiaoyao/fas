@@ -9,8 +9,7 @@ db = {min_size=2, max_size=5, dynaconf_merge=true}
 value = 'value for staging'
 
 [testing]
-value = 'value for testing'
-
+db = {min_size=2, max_size=5, dynaconf_merge=true}
 
 [production]
 debug = false

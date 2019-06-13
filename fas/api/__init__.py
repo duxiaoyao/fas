@@ -1,9 +1,13 @@
+import logging
+
 from dynaconf import settings
 from fastapi import FastAPI
 from starlette.requests import Request
 
 from fas.util.database import DBPool
 from . import organization
+
+LOGGER = logging.getLogger(__name__)
 
 _pool: DBPool = DBPool(**settings.DB)
 
@@ -12,6 +16,7 @@ app = FastAPI(debug=settings.DEBUG)
 
 @app.on_event('startup')
 async def open_database_connection_pool():
+    LOGGER.info(f'Current ENV: {settings.ENV_FOR_DYNACONF}')
     await _pool.open()
 
 

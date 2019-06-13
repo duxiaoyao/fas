@@ -5,6 +5,9 @@ from dynaconf import settings
 from fas.util.database.client import DBPool, DBClient
 
 if __name__ == '__main__':
+    print(f'Current ENV: {settings.ENV_FOR_DYNACONF}')
+
+
     async def main():
 
         pool = DBPool(**settings.DB)
