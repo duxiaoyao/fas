@@ -17,6 +17,23 @@ class DBInterface(abc.ABC):
     def conn(self) -> asyncpg.Connection:
         raise NotImplementedError('This is an abstract property, should not come here')
 
+    @property
+    @abc.abstractmethod
+    def is_connected(self) -> asyncpg.Connection:
+        raise NotImplementedError('This is an abstract property, should not come here')
+
+    @abc.abstractmethod
+    async def acquire(self) -> DBInterface:
+        raise NotImplementedError('This is an abstract property, should not come here')
+
+    @abc.abstractmethod
+    async def release(self) -> None:
+        raise NotImplementedError('This is an abstract property, should not come here')
+
+    async def _acquire_if_not_connected(self) -> None:
+        if not self.is_connected:
+            await self.acquire()
+
     async def execute(self, sql: str, *, timeout: float = None, **kwargs: Any) -> int:
         return await self._execute(sql, timeout=timeout, **kwargs)
 
@@ -168,11 +185,13 @@ class DBInterface(abc.ABC):
 
     async def _query(self, sql: str, *, timeout: float = None, **kwargs: Any) -> List:
         query, args = buildpg.render(sql, **kwargs)
+        await self._acquire_if_not_connected()
         LOGGER.debug(f'query: {query} \nargs: {args}')
         return await self.conn.fetch(query, *args, timeout=timeout)
 
     async def _execute(self, sql: str, *, timeout: float = None, **kwargs: Any) -> int:
         query, args = buildpg.render(sql, **kwargs)
+        await self._acquire_if_not_connected()
         LOGGER.debug(f'query: {query} \nargs: {args}')
         last_sql_status = await self.conn.execute(query, *args, timeout=timeout)
         try:
@@ -182,6 +201,8 @@ class DBInterface(abc.ABC):
 
 
 class FunctionValueProvider:
+    __slots__ = ('func', 'multiple_args')
+
     def __init__(self, func: Callable):
         self.func: Callable = func
         self.multiple_args: bool = len(inspect.signature(func).parameters) > 1
@@ -194,6 +215,8 @@ class FunctionValueProvider:
 
 
 class ConstValueProvider:
+    __slots__ = ('const',)
+
     def __init__(self, const):
         self.const = const
 
@@ -202,6 +225,8 @@ class ConstValueProvider:
 
 
 class DictValueProvider:
+    __slots__ = ('key',)
+
     def __init__(self, key):
         self.key = key
 

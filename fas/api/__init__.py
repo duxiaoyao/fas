@@ -28,7 +28,7 @@ async def close_database_connection_pool():
 @app.middleware('http')
 async def inject_database_connection_to_request(request: Request, call_next):
     try:
-        request.state.db = await _pool.acquire(acquire_timeout=3, release_timeout=3)
+        request.state.db = _pool.acquire(acquire_timeout=3, release_timeout=3)
         return await call_next(request)
     finally:
         if request.state.db:

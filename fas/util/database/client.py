@@ -13,6 +13,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class DBPool:
+    __slots__ = ('_options', '_close_timeout', '_pool')
+
     def __init__(self, dsn: str = None, *, close_timeout: float = None, min_size: int = 10, max_size: int = 10,
                  setup: Any = None, init: Any = None, **connect_kwargs: Any) -> None:
         self._options: Dict = dict(dsn=dsn, min_size=min_size, max_size=max_size, setup=setup, init=init,
@@ -107,6 +109,8 @@ class DBPool:
 
 
 class DBClient(DBInterface):
+    __slots__ = ('_pool', '_acquire_timeout', '_release_timeout', '_conn')
+
     def __init__(self, pool: DBPool, acquire_timeout: float = None, release_timeout: float = None) -> None:
         self._pool: DBPool = pool
         self._acquire_timeout: float = acquire_timeout
@@ -137,8 +141,7 @@ class DBClient(DBInterface):
         """
         Called when entering `async with db_pool.acquire()`
         """
-        await self.acquire()
-        return self
+        return self  # acquire connection lazily, check `_acquire_if_not_connected`
 
     async def __aexit__(self, exc_type: Type[BaseException] = None, exc_value: BaseException = None,
                         traceback: TracebackType = None) -> None:
@@ -146,9 +149,3 @@ class DBClient(DBInterface):
         Called when exiting `async with db_pool.acquire()`
         """
         await self.release()
-
-    def __await__(self) -> Generator:
-        """
-        Called if using `db_connection = await db_pool.acquire()`
-        """
-        return self.acquire().__await__()
