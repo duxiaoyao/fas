@@ -32,7 +32,7 @@ async def create(request: Request, name: str = Body(..., min_length=2, max_lengt
 async def get(request: Request, id: int):
     org = await get_organization(request.state.db, id)
     if not org:
-        raise HTTPException(status_code=404, detail=f'Organization #{id} not exist')
+        raise HTTPException(status_code=404, detail=f'Organization #{id} not found')
     return org
 
 
@@ -45,11 +45,11 @@ async def update(request: Request, id: int, name: str = Body(..., min_length=2, 
         LOGGER.exception(f'Cannot update organization #{id}: {err_msg}')
         raise HTTPException(status_code=409, detail=err_msg)
     if rowcount == 0:
-        raise HTTPException(status_code=404, detail=f'Organization #{id} not exist')
+        raise HTTPException(status_code=404, detail=f'Organization #{id} not found')
 
 
 @router.delete('/{id}', status_code=204, responses={404: {'model': Message}})
 async def delete(request: Request, id: int):
     rowcount = await delete_organization(request.state.db, id)
     if rowcount == 0:
-        raise HTTPException(status_code=404, detail=f'Organization #{id} not exist')
+        raise HTTPException(status_code=404, detail=f'Organization #{id} not found')

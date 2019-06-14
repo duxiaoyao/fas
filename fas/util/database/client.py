@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from types import TracebackType
-from typing import Any, Dict, Type, Optional, Generator
+from typing import Any, Dict, Type, Optional
 
 import asyncpg
 

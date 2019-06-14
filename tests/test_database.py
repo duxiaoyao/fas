@@ -1,46 +1,45 @@
-import asyncio
-
+import pytest
 from dynaconf import settings
 
 from fas.util.database import DBPool, DBClient
 
 
-def test_database():
+@pytest.fixture(scope="session", autouse=True)
+def print_current_env():
     print(f'Current ENV: {settings.ENV_FOR_DYNACONF}')
 
-    async def main():
 
-        pool = DBPool(**settings.DB)
-        await pool.open()
+@pytest.mark.asyncio
+async def test_pool_and_db_async_with():
+    async with DBPool(**settings.DB) as pool:
+        async with pool.acquire() as db:
+            print(await db.list('SELECT 1111, * FROM organization'))
+            assert 1 == await db.get_scalar('SELECT 1::INT')
+
+
+@pytest.mark.asyncio
+async def test_pool_await():
+    pool = DBPool(**settings.DB)
+    await pool.open()
+    try:
+        async with pool.acquire() as db:
+            assert 1 == await db.get_scalar('SELECT 1::INT')
+    finally:
+        await pool.close()
+
+
+@pytest.mark.asyncio
+async def test_db_await():
+    async with DBPool(**settings.DB) as pool:
+        db = pool.acquire()
         try:
-            async with DBClient(pool) as conn:
-                print(await conn.list('SELECT 1111, * FROM organization'))
-
-            conn = pool.acquire()
-            try:
-                print(await conn.list('SELECT 1112, * FROM organization'))
-            finally:
-                await conn.release()
-
-            async with pool.acquire() as conn:
-                print(await conn.list('SELECT 1113, * FROM organization'))
+            assert 1 == await db.get_scalar('SELECT 1::INT')
         finally:
-            await pool.close()
+            await db.release()
 
-        async with DBPool(**settings.DB) as pool:
-            async with DBClient(pool) as conn:
-                print(await conn.list('SELECT 2211, * FROM organization'))
 
-            conn = pool.acquire()
-            try:
-                print(await conn.list('SELECT 2212, * FROM organization'))
-            finally:
-                await conn.release()
-
-            async with pool.acquire() as conn:
-                print(await conn.list('SELECT 2213, * FROM organization'))
-                print(await conn.list('SELECT 2213, * FROM organization WHERE id=:id', id=2))
-                ret = await conn.execute('UPDATE organization SET name=:name WHERE id=:id', id=2, name='ttt')
-                print(ret)
-
-    asyncio.run(main())
+@pytest.mark.asyncio
+async def test_db_constructor():
+    async with DBPool(**settings.DB) as pool:
+        async with DBClient(pool) as db:
+            assert 1 == await db.get_scalar('SELECT 1::INT')
