@@ -12,6 +12,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class DBInterface(abc.ABC):
+    __slots__ = ()
+
     @property
     @abc.abstractmethod
     def conn(self) -> asyncpg.Connection:
@@ -30,7 +32,7 @@ class DBInterface(abc.ABC):
     async def release(self) -> None:
         raise NotImplementedError('This is an abstract property, should not come here')
 
-    async def _acquire_if_not_connected(self) -> None:
+    async def _acquire_if_necessary(self) -> None:
         if not self.is_connected:
             await self.acquire()
 
@@ -130,7 +132,7 @@ class DBInterface(abc.ABC):
 
         fragments = ['INSERT INTO ', table]
         if conflict_target or conflict_action:
-            fragments.append(' AS C')  # means "CURRENT"
+            fragments.append(' AS C')  # means `CURRENT`
         if specified_columns:
             fragments.append(f' ({", ".join(columns)})')
         fragments.append(' VALUES ')
@@ -185,13 +187,13 @@ class DBInterface(abc.ABC):
 
     async def _query(self, sql: str, *, timeout: float = None, **kwargs: Any) -> List:
         query, args = buildpg.render(sql, **kwargs)
-        await self._acquire_if_not_connected()
+        await self._acquire_if_necessary()
         LOGGER.debug(f'query: {query} \nargs: {args}')
         return await self.conn.fetch(query, *args, timeout=timeout)
 
     async def _execute(self, sql: str, *, timeout: float = None, **kwargs: Any) -> int:
         query, args = buildpg.render(sql, **kwargs)
-        await self._acquire_if_not_connected()
+        await self._acquire_if_necessary()
         LOGGER.debug(f'query: {query} \nargs: {args}')
         last_sql_status = await self.conn.execute(query, *args, timeout=timeout)
         try:
