@@ -17,8 +17,8 @@ async def list_organizations(db: DBClient) -> List[Organization]:
     return await db.list('SELECT * FROM organization', to_cls=Organization)
 
 
-async def create_organization(db: DBClient, name: str) -> Organization:
-    return await db.insert('organization', name=name, returns_record=True, to_cls=Organization)
+async def create_organization(db: DBClient, name: str) -> int:
+    return await db.insert('organization', name=name, returns_id=True)
 
 
 async def get_organization(db: DBClient, id: int) -> Organization:
