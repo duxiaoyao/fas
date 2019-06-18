@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import logging
 from types import TracebackType
-from typing import Any, Dict, Type, Optional
+from typing import Any, Dict, Type, Optional, Union, Callable
 
 import asyncpg
 
@@ -148,4 +149,35 @@ class DBClient(DBInterface):
         """
         Called when exiting `async with db_pool.acquire()`
         """
-        await self.release()
+        if self.is_connected:
+            await self.release()
+
+
+def transactional(isolation: Union[str, Callable] = 'read_committed', readonly: bool = False, deferrable: bool = False):
+    if callable(isolation):
+        func = isolation
+        return TransactionDecorator()(func)
+    else:
+        return TransactionDecorator(isolation=isolation, readonly=readonly, deferrable=deferrable)
+
+
+class TransactionDecorator:
+    __slots__ = ('isolation', 'readonly', 'deferrable')
+
+    def __init__(self, *, isolation: str = 'read_committed', readonly: bool = False, deferrable: bool = False):
+        self.isolation: str = isolation
+        self.readonly: bool = readonly
+        self.deferrable: bool = deferrable
+
+    def __call__(self, func: Callable) -> Callable:
+        @functools.wraps(func)
+        async def wrapper(db: DBClient, *args: Any, **kwargs: Any) -> Any:
+            if db.is_in_transaction:
+                return await func(db, *args, **kwargs)
+            else:
+                await db._acquire_if_necessary()
+                async with db._transaction_after_connected(isolation=self.isolation, readonly=self.readonly,
+                                                           deferrable=self.deferrable):
+                    return await func(db, *args, **kwargs)
+
+        return wrapper

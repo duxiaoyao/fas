@@ -3,9 +3,10 @@ from __future__ import annotations
 import abc
 import inspect
 import logging
-from typing import Any, Dict, Optional, Tuple, Union, Sequence, Callable, List
+from typing import Any, Dict, Optional, Tuple, Union, Sequence, Callable, List, AsyncGenerator
 
 import asyncpg
+import asyncpg.transaction
 import buildpg
 
 LOGGER = logging.getLogger(__name__)
@@ -36,8 +37,28 @@ class DBInterface(abc.ABC):
         if not self.is_connected:
             await self.acquire()
 
+    @property
+    def is_in_transaction(self):
+        return self.is_connected and self.conn.is_in_transaction()
+
+    async def transaction(self, *, isolation: str = 'read_committed', readonly: bool = False,
+                          deferrable: bool = False) -> asyncpg.transaction.Transaction:
+        await self._acquire_if_necessary()
+        return self.conn.transaction(isolation=isolation, readonly=readonly, deferrable=deferrable)
+
+    def _transaction_after_connected(self, *, isolation: str = 'read_committed', readonly: bool = False,
+                                     deferrable: bool = False) -> asyncpg.transaction.Transaction:
+        return self.conn.transaction(isolation=isolation, readonly=readonly, deferrable=deferrable)
+
     async def execute(self, sql: str, *, timeout: float = None, **kwargs: Any) -> int:
         return await self._execute(sql, timeout=timeout, **kwargs)
+
+    async def executemany(self, sql: str, args: Sequence, *, should_insert=None, timeout: float = None) -> None:
+        if should_insert:
+            args = [e for e in args if should_insert(e)]
+        if not args:
+            return
+        await self._executemany(sql, args, timeout=timeout)
 
     async def exists(self, sql: str, *, timeout: float = None, **kwargs: Any) -> bool:
         return await self.get_scalar('SELECT EXISTS ({})'.format(sql), timeout=timeout, **kwargs)
@@ -77,7 +98,7 @@ class DBInterface(abc.ABC):
         return to_cls(**rows[0][0]) if to_cls else rows[0][0]
 
     async def insert(self, table: str, objects: Optional[Union[Dict[str, Any], Sequence]] = None, *,
-                     returns_id: Union[bool, str, Tuple[str]] = False, returns_record: Union[bool, Tuple[str]] = False,
+                     return_id: Union[bool, str, Tuple[str]] = False, return_record: Union[bool, Tuple[str]] = False,
                      to_cls: Optional[Callable[[Any], Any]] = None,
                      should_insert: Optional[Callable[[Any], bool]] = None, include_attrs: Optional[Tuple[str]] = None,
                      exclude_attrs: Tuple[str] = (), conflict_target: str = '', conflict_action: str = '',
@@ -98,7 +119,7 @@ class DBInterface(abc.ABC):
             if should_insert:
                 objects = [o for o in objects if should_insert(o)]
             if not objects:
-                return [] if returns_id or returns_record else 0
+                return [] if return_id or return_record else 0
 
         specified_columns = True
         columns = tuple(value_providers)
@@ -158,13 +179,13 @@ class DBInterface(abc.ABC):
             fragments.append(')')
         if conflict_target or conflict_action:
             fragments.append(f' ON CONFLICT {conflict_target} {conflict_action}')
-        if returns_id:
-            if returns_id is True:
+        if return_id:
+            if return_id is True:
                 key_names = ('id',)
-            elif isinstance(returns_id, str):
-                key_names = (returns_id,)
+            elif isinstance(return_id, str):
+                key_names = (return_id,)
             else:
-                key_names = returns_id
+                key_names = return_id
             fragments.append(f' RETURNING {", ".join(key_names)}')
             if len(key_names) == 1:
                 if objects:
@@ -176,14 +197,24 @@ class DBInterface(abc.ABC):
                     return await self.list(''.join(fragments), to_cls=to_cls, timeout=timeout, **args)
                 else:
                     return await self.get(''.join(fragments), to_cls=to_cls, timeout=timeout, **args)
-        elif returns_record:
-            fragments.append(f' RETURNING {"*" if returns_record is True else ", ".join(returns_record)}')
+        elif return_record:
+            fragments.append(f' RETURNING {"*" if return_record is True else ", ".join(return_record)}')
             if objects:
                 return await self.list(''.join(fragments), to_cls=to_cls, timeout=timeout, **args)
             else:
                 return await self.get(''.join(fragments), to_cls=to_cls, timeout=timeout, **args)
         else:
             return await self.execute(''.join(fragments), timeout=timeout, **args)
+
+    async def iter(self, sql: str, *, to_cls: Optional[Callable[[Any], Any]] = None, return_scalar: bool = False,
+                   timeout: float = None, **kwargs) -> AsyncGenerator:
+        async for record in self._iter(sql, to_cls=to_cls, return_scalar=return_scalar, timeout=timeout, **kwargs):
+            yield record
+
+    async def iter_scalar(self, sql: str, *, to_cls: Optional[Callable[[Any], Any]] = None, timeout: float = None,
+                          **kwargs) -> AsyncGenerator:
+        async for record in self._iter(sql, to_cls=to_cls, return_scalar=True, timeout=timeout, **kwargs):
+            yield record
 
     async def _query(self, sql: str, *, timeout: float = None, **kwargs: Any) -> List:
         query, args = buildpg.render(sql, **kwargs)
@@ -200,6 +231,38 @@ class DBInterface(abc.ABC):
             return int(last_sql_status.split()[-1])
         except (ValueError, AttributeError, IndexError):
             return 0
+
+    async def _executemany(self, sql: str, args: Sequence, *, timeout: float = None) -> None:
+        query, _ = buildpg.render(sql, values=args[0])
+        args = [buildpg.render.get_params(a) for a in args]
+        await self._acquire_if_necessary()
+        LOGGER.debug(f'query: {query} \nargs: {args}')
+        await self.conn.executemany(query, args, timeout=timeout)
+
+    async def _iter(self, sql: str, *, to_cls: Optional[Callable[[Any], Any]] = None, return_scalar: bool = False,
+                    timeout: float = None, **kwargs: Any) -> AsyncGenerator:
+        query, args = buildpg.render(sql, **kwargs)
+        LOGGER.debug(f'query: {query} \nargs: {args}')
+        checked_scalar: bool = not return_scalar
+        tr = None
+        if not self.is_in_transaction:
+            tr = await self.transaction()
+            await tr.start()
+        try:
+            async for row in self.conn.cursor(query, *args, timeout=timeout):
+                if not checked_scalar:
+                    if len(row) > 1:
+                        raise Exception(f'More than one columns returned: sql={sql} and kwargs={kwargs}')
+                    checked_scalar = True
+                v = row[0] if return_scalar else row
+                yield to_cls(**v) if to_cls else v
+        except Exception:
+            if tr:
+                await tr.rollback()
+            raise
+        else:
+            if tr:
+                await tr.commit()
 
 
 class FunctionValueProvider:
