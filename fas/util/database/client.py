@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import json
 import logging
 from types import TracebackType
 from typing import Any, Dict, Type, Optional, Union, Callable
@@ -13,13 +14,18 @@ from .interface import DBInterface
 LOGGER = logging.getLogger(__name__)
 
 
+async def _set_automatic_json_conversion(conn: asyncpg.Connection):
+    await conn.set_type_codec('json', encoder=json.dumps, decoder=json.loads, schema='pg_catalog')
+    await conn.set_type_codec('jsonb', encoder=json.dumps, decoder=json.loads, schema='pg_catalog')
+
+
 class DBPool:
     __slots__ = ('_options', '_close_timeout', '_pool')
 
     def __init__(self, dsn: str = None, *, close_timeout: float = None, min_size: int = 10, max_size: int = 10,
                  setup: Any = None, init: Any = None, **connect_kwargs: Any) -> None:
-        self._options: Dict = dict(dsn=dsn, min_size=min_size, max_size=max_size, setup=setup, init=init,
-                                   **connect_kwargs)
+        self._options: Dict = dict(dsn=dsn, min_size=min_size, max_size=max_size, setup=setup,
+                                   init=init or _set_automatic_json_conversion, **connect_kwargs)
         self._close_timeout: float = close_timeout
         self._pool: Optional[asyncpg.pool.Pool] = None
 

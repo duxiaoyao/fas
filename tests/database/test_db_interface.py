@@ -99,3 +99,10 @@ async def test_iter_scalar(db: DBClient):
                                      name_pattern='Org%'):
         assert f'Org#{i}' == name
         i += 1
+
+
+@pytest.mark.asyncio
+async def test_json(db: DBClient):
+    data = {'a': 'ab', 'b': 1}
+    assert data == await db.get_scalar('SELECT :data::JSON', data=data)
+    assert data == await db.get_scalar('SELECT :data::JSONB', data=data)
