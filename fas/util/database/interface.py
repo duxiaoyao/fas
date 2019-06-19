@@ -7,7 +7,8 @@ from typing import Any, Dict, Optional, Tuple, Union, Sequence, Callable, List, 
 
 import asyncpg
 import asyncpg.transaction
-import buildpg
+
+from .parameter import render, render_many
 
 LOGGER = logging.getLogger(__name__)
 
@@ -217,13 +218,13 @@ class DBInterface(abc.ABC):
             yield record
 
     async def _query(self, sql: str, *, timeout: float = None, **kwargs: Any) -> List:
-        query, args = buildpg.render(sql, **kwargs)
+        query, args = render(sql, **kwargs)
         await self._acquire_if_necessary()
         LOGGER.debug(f'query: {query} \nargs: {args}')
         return await self.conn.fetch(query, *args, timeout=timeout)
 
     async def _execute(self, sql: str, *, timeout: float = None, **kwargs: Any) -> int:
-        query, args = buildpg.render(sql, **kwargs)
+        query, args = render(sql, **kwargs)
         await self._acquire_if_necessary()
         LOGGER.debug(f'query: {query} \nargs: {args}')
         last_sql_status = await self.conn.execute(query, *args, timeout=timeout)
@@ -233,15 +234,14 @@ class DBInterface(abc.ABC):
             return 0
 
     async def _executemany(self, sql: str, args: Sequence, *, timeout: float = None) -> None:
-        query, _ = buildpg.render(sql, values=args[0])
-        args = [buildpg.render.get_params(a) for a in args]
+        query, args = render_many(sql, args)
         await self._acquire_if_necessary()
         LOGGER.debug(f'query: {query} \nargs: {args}')
         await self.conn.executemany(query, args, timeout=timeout)
 
     async def _iter(self, sql: str, *, to_cls: Optional[Callable[[Any], Any]] = None, return_scalar: bool = False,
                     timeout: float = None, **kwargs: Any) -> AsyncGenerator:
-        query, args = buildpg.render(sql, **kwargs)
+        query, args = render(sql, **kwargs)
         LOGGER.debug(f'query: {query} \nargs: {args}')
         checked_scalar: bool = not return_scalar
         tr = None

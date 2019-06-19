@@ -19,7 +19,6 @@ async def test_execute(db: DBClient):
     assert await db.get_scalar('SELECT name FROM organization WHERE name=:name', name=new_name)
 
 
-@pytest.mark.skip('buildpg not support')
 @pytest.mark.asyncio
 async def test_executemany(db: DBClient):
     name1 = 'Org#1'
