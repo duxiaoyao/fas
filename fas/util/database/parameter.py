@@ -28,10 +28,10 @@ def _render(sql: str):
             param_names.append(name)
         return f'${index + 1}'
 
-    repl: Callable[[Match[AnyStr]], AnyStr] = partial(replace, add_param=add_param)
+    repl: Callable[[Match[AnyStr]], AnyStr] = partial(_replace, add_param=add_param)
     return REGEX.sub(repl, sql), param_names
 
 
-def replace(m: Match[AnyStr], *, add_param: Callable) -> AnyStr:
+def _replace(m: Match[AnyStr], *, add_param: Callable) -> AnyStr:
     name = m.group(1)
     return add_param(name)
