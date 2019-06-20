@@ -1,6 +1,6 @@
 import pytest
 
-from fas.util.database.parameter import render, render_many
+from fas.util.database.parameter import render
 
 args = 'template', 'ctx', 'expected_query', 'expected_params'
 TESTS = [
@@ -40,14 +40,14 @@ TESTS = [
 
 
 @pytest.mark.parametrize(','.join(args), [[t[a] for a in args] for t in TESTS], ids=[t['template'] for t in TESTS])
-def test_render(template, ctx, expected_query, expected_params):
+def test_render_one(template, ctx, expected_query, expected_params):
     ctx = ctx()
     query, params = render(template, **ctx)
     assert expected_query == query
     assert expected_params == params
 
 
-def test_render_errors():
+def test_render_one_errors():
     with pytest.raises(KeyError):
         render(':a :b', a=1)
     with pytest.raises(KeyError):
@@ -55,14 +55,14 @@ def test_render_errors():
 
 
 def test_render_many():
-    query, params = render_many(':new_name :name',
-                                [{'name': 'n2', 'new_name': 'nn2'}, {'name': 'n1', 'new_name': 'nn1'}])
+    query, params = render(':new_name :name',
+                           [{'name': 'n2', 'new_name': 'nn2'}, {'name': 'n1', 'new_name': 'nn1'}])
     assert '$1 $2' == query
     assert (('nn2', 'n2'), ('nn1', 'n1')) == params
 
 
 def test_render_many_errors():
     with pytest.raises(KeyError):
-        render_many(':a :b', [{'a': 1, 'b': 2}, {'a': 10}])
+        render(':a :b', [{'a': 1, 'b': 2}, {'a': 10}])
     with pytest.raises(KeyError):
-        render_many(':a :b', [{'a': 1, 'b': 11}, {'a': 2, 'bb': 21}])
+        render(':a :b', [{'a': 1, 'b': 11}, {'a': 2, 'bb': 21}])

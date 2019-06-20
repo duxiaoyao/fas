@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional, Tuple, Union, Sequence, Callable, List, 
 import asyncpg
 import asyncpg.transaction
 
-from .parameter import render, render_many
+from .parameter import render
 
 LOGGER = logging.getLogger(__name__)
 
@@ -234,7 +234,7 @@ class DBInterface(abc.ABC):
             return 0
 
     async def _executemany(self, sql: str, args: Sequence, *, timeout: float = None) -> None:
-        query, args = render_many(sql, args)
+        query, args = render(sql, args)
         await self._acquire_if_necessary()
         LOGGER.debug(f'query: {query} \nargs: {args}')
         await self.conn.executemany(query, args, timeout=timeout)

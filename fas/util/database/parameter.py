@@ -5,15 +5,13 @@ from typing import Mapping, Any, Callable, AnyStr, Match, Sequence, Tuple
 REGEX = re.compile(r'(?<!:):([a-z][a-z\d_]*)', flags=re.A)
 
 
-def render(sql: str, **param_name2value: Mapping[str, Any]) -> Tuple[str, Tuple]:
+def render(sql: str, params: Sequence[Mapping[str, Any]] = None, **param_name2value: Mapping[str, Any]) \
+        -> Tuple[str, Tuple]:
     query, param_names = _render(sql)
-    args = tuple(param_name2value[name] for name in param_names)
-    return query, args
-
-
-def render_many(sql: str, params: Sequence[Mapping[str, Any]]) -> Tuple[str, Tuple[Tuple[Any]]]:
-    query, param_names = _render(sql)
-    args = tuple(tuple(p[name] for name in param_names) for p in params)
+    if params:
+        args = tuple(tuple(p[name] for name in param_names) for p in params)
+    else:
+        args = tuple(param_name2value[name] for name in param_names)
     return query, args
 
 
