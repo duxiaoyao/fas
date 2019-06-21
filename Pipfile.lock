@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "1998493fff3384c166aa35c930629c4646c3312fc5af7f766924c44e0075d435"
+            "sha256": "da6889f2cc17d66353d2ce8878b404a5d667efe13d5d21b0f48fba06a4e48cc6"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -53,10 +53,10 @@
         },
         "fastapi": {
             "hashes": [
-                "sha256:4bc46cf460ee60a8dc05e0bfb6fcddb1abc8a8043509bdd02f8757beac2d1f09",
-                "sha256:e9bcd06c4919487aedda55cab53444feb1c09630f30522ca3640a0da45a6cfe3"
+                "sha256:1531166f92fdad1e86ba131da7c2adbdc9ac5bebff21d128d84dc35432030271",
+                "sha256:a6bcc7b67e001fd7b8fd9d65de2a889e5881c1b58dde4c39b934c6ac1178460d"
             ],
-            "version": "==0.29.1"
+            "version": "==0.30.0"
         },
         "h11": {
             "hashes": [
@@ -71,12 +71,24 @@
             ],
             "version": "==0.0.13"
         },
+        "invoke": {
+            "hashes": [
+                "sha256:4f4de934b15c2276caa4fbc5a3b8a61c0eb0b234f2be1780d2b793321995c2d6",
+                "sha256:dc492f8f17a0746e92081aec3f86ae0b4750bf41607ea2ad87e5a7b5705121b7",
+                "sha256:eb6f9262d4d25b40330fb21d1e99bf0f85011ccc3526980f8a3eaedd4b43892e"
+            ],
+            "version": "==1.2.0"
+        },
         "pydantic": {
             "hashes": [
-                "sha256:b72e0df2463cee746cf42639845d4106c19f30136375e779352d710e69617731",
-                "sha256:dab99d3070e040b8b2e987dfbe237350ab92d5d57a22d4e0e268ede2d85c7964"
+                "sha256:3aafa1b58181c53a8e2971dc3c6f45945ddd18192b6f9c8e17f5ef2adcdf3987",
+                "sha256:60fe5aa17ecb5ba949e7e1e1f9b9500dae780d6c79c798bfd78ac5dd9f9d9517",
+                "sha256:92e4fb2917e4837e53edfee9f99c9075c152f9b9fe2b19d047b8fb25ed9bc089",
+                "sha256:98c5faf742baee5cbbe9ff609829df6ff4234863c4a992f8d46679df4d68aeab",
+                "sha256:bc4a051b81f31597efc96b4bf6a3aa75ea95ca0a87c4666ad5638be373e0c66a",
+                "sha256:d3d29768ae85c1333da5d10cbe793c6a01dcb1ec8ff86f1fbe2c588089bc11ea"
             ],
-            "version": "==0.26"
+            "version": "==0.28"
         },
         "python-box": {
             "hashes": [

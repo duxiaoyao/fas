@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 
 _pool: DBPool = DBPool(**settings.DB)
 
-app = FastAPI(debug=settings.DEBUG)
+app = FastAPI()
 
 
 @app.on_event('startup')

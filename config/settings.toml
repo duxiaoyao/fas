@@ -1,16 +1,18 @@
 [default]
 debug = false
 db = {host='localhost', port=5432, user='eric', database='kbase'}
+db_owner = {name='eric'}
 
 [development]
-debug = true
+#debug = true
 db = {min_size=2, max_size=5, dynaconf_merge=true}
 
 [staging]
 value = 'value for staging'
 
 [testing]
-db = {min_size=2, max_size=5, dynaconf_merge=true}
+#debug = true
+db = {database='kbase_test', min_size=2, max_size=5, dynaconf_merge=true}
 
 [production]
 

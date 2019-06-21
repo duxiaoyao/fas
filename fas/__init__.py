@@ -1,6 +1,6 @@
-import logging
+import dynaconf
 
-from dynaconf import settings
+if dynaconf.settings.DEBUG:
+    import logging
 
-if settings.DEBUG:
     logging.getLogger(__name__).setLevel(logging.DEBUG)
