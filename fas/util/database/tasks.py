@@ -18,6 +18,9 @@ LOGGER = logging.getLogger(__name__)
 
 @task(name='create')
 def create_database_if_not_exist(c):
+    """
+    Create database
+    """
     env = os.environ.copy()
     env['PGPASSWORD'] = c.db.owner.password
     if is_database_existed(c, env):
@@ -32,6 +35,9 @@ def create_database_if_not_exist(c):
 
 @task(name='drop')
 def drop_database(c):
+    """
+    Drop database
+    """
     if not (ENV.is_dev or ENV.is_test):
         raise Exception('Cannot drop database under environments other than dev or test')
     env = os.environ.copy()
@@ -45,6 +51,9 @@ def drop_database(c):
 
 @task(name='migrate')
 def migrate_database(c):
+    """
+    Migrate database
+    """
     create_database_if_not_exist(c)
 
     async def _migrate_database():
@@ -65,6 +74,9 @@ def migrate_database(c):
 
 @task(name='reset')
 def reset_database(c):
+    """
+    Reset database
+    """
     drop_database(c)
     create_database_if_not_exist(c)
     migrate_database(c)
@@ -79,6 +91,9 @@ def is_database_existed(c, env):
 
 @task('lock-scripts')
 def lock_scripts(c):
+    """
+    Lock migration scripts
+    """
     for sql_path in SCRIPT_DIR.rglob('*.sql'):
         lock_path = sql_path.with_suffix('.locked')
         md_hash = calculate_md5_hash(sql_path)
