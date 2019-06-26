@@ -82,14 +82,7 @@ def reset_database(c):
     migrate_database(c)
 
 
-def is_database_existed(c, env):
-    r = c.run(f'''
-        psql -h {c.db.host} -p {c.db.port} -U {c.db.owner.name} -lqt | cut -d \\| -f 1 | grep -w {c.db.database} | wc -l
-        ''', hide='out', env=env)
-    return 1 == int(r.stdout)
-
-
-@task('lock-scripts')
+@task(name='lock-scripts')
 def lock_scripts(c):
     """
     Lock migration scripts
@@ -98,6 +91,42 @@ def lock_scripts(c):
         lock_path = sql_path.with_suffix('.locked')
         md_hash = calculate_md5_hash(sql_path)
         lock_path.write_text(md_hash)
+
+
+@task(name='backup')
+def create_backup(c, to_file=None):
+    """
+    Create database backup
+    """
+    env = os.environ.copy()
+    env['PGPASSWORD'] = c.db.owner.password
+    to_file = to_file or f'{c.db.database}.dump'
+    LOGGER.info(f'Be about to back up {c.db.database} to {to_file}')
+    c.run(f'pg_dump -h {c.db.host} -p {c.db.port} -U {c.db.owner.name} -d {c.db.database} -v -b -Fc -f "{to_file}"',
+          env=env)
+    LOGGER.info(f'Backed up {c.db.database} to {to_file}')
+
+
+@task(name='restore')
+def restore_backup(c, from_file=None):
+    """
+    Restore database backup
+    """
+    env = os.environ.copy()
+    env['PGPASSWORD'] = c.db.owner.password
+    from_file = from_file or f'{c.db.database}.dump'
+    LOGGER.info(f'Be about to restore {c.db.database} from {from_file}')
+    c.run(
+        f'pg_restore -h {c.db.host} -p {c.db.port} -U {c.db.owner.name} -d postgres -v -C -c -e -O -Fc "{from_file}"',
+        env=env)
+    LOGGER.info(f'Restored {c.db.database} from {from_file}')
+
+
+def is_database_existed(c, env):
+    r = c.run(f'''
+        psql -h {c.db.host} -p {c.db.port} -U {c.db.owner.name} -lqt | cut -d \\| -f 1 | grep -w {c.db.database} | wc -l
+        ''', hide='out', env=env)
+    return 1 == int(r.stdout)
 
 
 @transactional
@@ -128,5 +157,5 @@ async def create_database_migration_table_if_not_exist(db: DBClient):
 
 
 db_tasks = Collection('db', create_database_if_not_exist, drop_database, reset_database, migrate_database,
-                      lock_scripts)
+                      create_backup, restore_backup, lock_scripts)
 db_tasks.configure({'db': {**settings.DB, 'owner': settings.DB_OWNER}})
