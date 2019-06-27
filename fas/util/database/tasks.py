@@ -10,7 +10,7 @@ from invoke import task, Collection
 
 from fas.environment import ENV
 from .client import DBClient, DBPool
-from .migration import load_versions, SCRIPT_DIR, calculate_md5_hash
+from .migration import load_versions, lock_scripts
 from .transaction import transactional
 
 LOGGER = logging.getLogger(__name__)
@@ -64,10 +64,13 @@ def migrate_database(c):
                     'SELECT to_version FROM database_migration ORDER BY id DESC LIMIT 1') or 0
             new_versions = load_versions(after=current_version)
             if not new_versions:
-                LOGGER.info(f'Migration scripts after version {current_version} not found')
+                LOGGER.warning(f'Did not migrate database {c.db.database}: no scripts after version {current_version}')
                 return
             async with pool.acquire() as db:
-                await execute_migration_scripts(db, new_versions)
+                to_version = max(new_versions)
+                LOGGER.info(f'Be about to migrate {c.db.database} from {current_version} to {to_version}')
+                await execute_migration_scripts(db, current_version, to_version, new_versions)
+                LOGGER.info(f'Migrated {c.db.database} from {current_version} to {to_version}')
 
     asyncio.run(_migrate_database())
 
@@ -78,19 +81,20 @@ def reset_database(c):
     Reset database
     """
     drop_database(c)
-    create_database_if_not_exist(c)
     migrate_database(c)
+    LOGGER.info(f'Reset database {c.db.database}')
 
 
 @task(name='lock-scripts')
-def lock_scripts(c):
+def lock_migration_scripts(c):
     """
     Lock migration scripts
     """
-    for sql_path in SCRIPT_DIR.rglob('*.sql'):
-        lock_path = sql_path.with_suffix('.locked')
-        md_hash = calculate_md5_hash(sql_path)
-        lock_path.write_text(md_hash)
+    locked_count = lock_scripts()
+    if locked_count == 0:
+        LOGGER.warning(f'Did not lock migration scripts for database {c.db.database}: no not-locked scripts')
+    else:
+        LOGGER.info(f'Locked {locked_count} migration scripts for database {c.db.database}')
 
 
 @task(name='backup')
@@ -124,22 +128,19 @@ def restore_backup(c, from_file=None):
 
 def is_database_existed(c, env):
     r = c.run(f'''
-        psql -h {c.db.host} -p {c.db.port} -U {c.db.owner.name} -lqt | cut -d \\| -f 1 | grep -w {c.db.database} | wc -l
+        psql -h {c.db.host} -p {c.db.port} -U {c.db.owner.name} -lqt | cut -d \\| -f 1 | awk '{{$1=$1}};1' | \
+        grep -x {c.db.database} | wc -l
         ''', hide='out', env=env)
     return 1 == int(r.stdout)
 
 
 @transactional
-async def execute_migration_scripts(db: DBClient, versions: Dict[int, Path]):
-    to_version = max(versions)
-    LOGGER.info(f'Be about to migrate to {to_version}')
-    from_version = min(versions)
-    for version in range(from_version, to_version + 1):
+async def execute_migration_scripts(db: DBClient, from_version: int, to_version: int, versions: Dict[int, Path]):
+    for version in range(from_version + 1, to_version + 1):
         LOGGER.info(f'Applying version: {version}')
         await db.execute(versions[version].read_text(encoding='UTF-8'))
     await db.insert('database_migration', from_version=from_version, to_version=to_version,
                     migrated_at=dt.datetime.now(dt.timezone.utc))
-    LOGGER.info(f'Migrated to {to_version}')
 
 
 async def create_database_migration_table_if_not_exist(db: DBClient):
@@ -149,13 +150,13 @@ async def create_database_migration_table_if_not_exist(db: DBClient):
             from_version INT NOT NULL,
             to_version INT NOT NULL,
             migrated_at TIMESTAMP WITH TIME ZONE NOT NULL,
-            
-            CHECK (to_version >= from_version),
-            EXCLUDE USING GIST (NUMRANGE(from_version, to_version, '[]') WITH &&)
+
+            CHECK (to_version > from_version),
+            EXCLUDE USING GIST (NUMRANGE(from_version, to_version, '(]') WITH &&)
         )
         ''')
 
 
 db_tasks = Collection('db', create_database_if_not_exist, drop_database, reset_database, migrate_database,
-                      create_backup, restore_backup, lock_scripts)
+                      lock_migration_scripts, create_backup, restore_backup)
 db_tasks.configure({'db': {**settings.DB, 'owner': settings.DB_OWNER}})
