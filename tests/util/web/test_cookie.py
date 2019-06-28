@@ -75,7 +75,7 @@ def test_expired_cookie(monkeypatch):
         if expect_cookie is None:
             set_secure_cookie(response, 'mycookie', 'Hello, cookies!')
         elif expect_cookie:
-            assert get_secure_cookie(request, 'mycookie') == b'Hello, cookies!'
+            assert get_secure_cookie(request, 'mycookie') == 'Hello, cookies!'
         else:
             assert get_secure_cookie(request, 'mycookie') is None
 
