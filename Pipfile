@@ -6,6 +6,7 @@ verify_ssl = true
 [dev-packages]
 pytest = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 pytest-asyncio = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
+requests = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 
 [packages]
 fastapi = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
@@ -13,6 +14,7 @@ uvicorn = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 dynaconf = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 asyncpg = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 invoke = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
+argon2-cffi = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 
 [requires]
 python_version = "3.7"

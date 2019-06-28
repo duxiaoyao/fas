@@ -5,13 +5,13 @@ from fastapi import FastAPI
 from starlette.requests import Request
 
 from fas.util.database import DBPool
-from . import organization
+from . import organization, operator
 
 LOGGER = logging.getLogger(__name__)
 
 _pool: DBPool = DBPool(**settings.DB)
 
-app = FastAPI()
+app = FastAPI(debug=True)
 
 
 @app.on_event('startup')
@@ -44,3 +44,4 @@ def read_root():
 
 
 app.include_router(organization.router, prefix='/organizations', tags=['organizations'])
+app.include_router(operator.router, prefix='/operators', tags=['operators'])
