@@ -15,6 +15,7 @@ dynaconf = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 asyncpg = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 invoke = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 argon2-cffi = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
+blessings = {index = "https://mirrors.aliyun.com/pypi/simple",version = "*"}
 
 [requires]
 python_version = "3.7"

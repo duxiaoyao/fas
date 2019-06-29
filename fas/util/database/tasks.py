@@ -1,10 +1,10 @@
 import asyncio
 import datetime as dt
-import logging
 import os
 from pathlib import Path
 from typing import Dict
 
+from blessings import Terminal
 from dynaconf import settings
 from invoke import task, Collection
 
@@ -13,7 +13,7 @@ from .client import DBClient, DBPool
 from .migration import load_versions, lock_scripts
 from .transaction import transactional
 
-LOGGER = logging.getLogger(__name__)
+t = Terminal()
 
 
 @task(name='create')
@@ -24,13 +24,13 @@ def create_database_if_not_exist(c):
     env = os.environ.copy()
     env['PGPASSWORD'] = c.db.owner.password
     if is_database_existed(c, env):
-        LOGGER.warning(f'Cannot create database {c.db.database}: already exist')
+        print(t.yellow(f'Cannot create database {c.db.database}: already exist'))
         return
     c.run(f'''
         createdb -h {c.db.host} -p {c.db.port} -U {c.db.owner.name} {c.db.database} \
         -T template0 -E UTF-8 --locale=C.UTF-8
         ''', env=env)
-    LOGGER.info(f'Created database {c.db.database}')
+    print(t.green(f'Created database {c.db.database}'))
 
 
 @task(name='drop')
@@ -43,10 +43,10 @@ def drop_database(c):
     env = os.environ.copy()
     env['PGPASSWORD'] = c.db.owner.password
     if not is_database_existed(c, env):
-        LOGGER.warning(f'Cannot drop database {c.db.database}: not found')
+        print(t.yellow(f'Cannot drop database {c.db.database}: not found'))
         return
     c.run(f'dropdb -h {c.db.host} -p {c.db.port} -U {c.db.owner.name} {c.db.database}', env=env)
-    LOGGER.info(f'Dropped database {c.db.database}')
+    print(t.green(f'Dropped database {c.db.database}'))
 
 
 @task(name='migrate')
@@ -64,13 +64,13 @@ def migrate_database(c):
                     'SELECT to_version FROM database_migration ORDER BY id DESC LIMIT 1') or 0
             new_versions = load_versions(after=current_version)
             if not new_versions:
-                LOGGER.warning(f'Did not migrate database {c.db.database}: no scripts after version {current_version}')
+                print(t.yellow(f'Did not migrate database {c.db.database}: no scripts after version {current_version}'))
                 return
             async with pool.acquire() as db:
                 to_version = max(new_versions)
-                LOGGER.info(f'Be about to migrate {c.db.database} from {current_version} to {to_version}')
+                print(f'Be about to migrate {c.db.database} from {current_version} to {to_version}')
                 await execute_migration_scripts(db, current_version, to_version, new_versions)
-                LOGGER.info(f'Migrated {c.db.database} from {current_version} to {to_version}')
+                print(t.green(f'Migrated {c.db.database} from {current_version} to {to_version}'))
 
     asyncio.run(_migrate_database())
 
@@ -82,7 +82,7 @@ def reset_database(c):
     """
     drop_database(c)
     migrate_database(c)
-    LOGGER.info(f'Reset database {c.db.database}')
+    print(t.green(f'Reset database {c.db.database}'))
 
 
 @task(name='lock-scripts')
@@ -92,9 +92,9 @@ def lock_migration_scripts(c):
     """
     locked_count = lock_scripts()
     if locked_count == 0:
-        LOGGER.warning(f'Did not lock migration scripts for database {c.db.database}: no not-locked scripts')
+        print(t.yellow(f'Did not lock migration scripts for database {c.db.database}: no not-locked scripts'))
     else:
-        LOGGER.info(f'Locked {locked_count} migration scripts for database {c.db.database}')
+        print(t.green(f'Locked {locked_count} migration scripts for database {c.db.database}'))
 
 
 @task(name='backup')
@@ -105,10 +105,10 @@ def create_backup(c, to_file=None):
     env = os.environ.copy()
     env['PGPASSWORD'] = c.db.owner.password
     to_file = to_file or f'{c.db.database}.dump'
-    LOGGER.info(f'Be about to back up {c.db.database} to {to_file}')
+    print(f'Be about to back up {c.db.database} to {to_file}')
     c.run(f'pg_dump -h {c.db.host} -p {c.db.port} -U {c.db.owner.name} -d {c.db.database} -v -b -Fc -f "{to_file}"',
           env=env)
-    LOGGER.info(f'Backed up {c.db.database} to {to_file}')
+    print(t.green(f'Backed up {c.db.database} to {to_file}'))
 
 
 @task(name='restore')
@@ -119,11 +119,11 @@ def restore_backup(c, from_file=None):
     env = os.environ.copy()
     env['PGPASSWORD'] = c.db.owner.password
     from_file = from_file or f'{c.db.database}.dump'
-    LOGGER.info(f'Be about to restore {c.db.database} from {from_file}')
+    print(f'Be about to restore {c.db.database} from {from_file}')
     c.run(
         f'pg_restore -h {c.db.host} -p {c.db.port} -U {c.db.owner.name} -d postgres -v -C -c -e -O -Fc "{from_file}"',
         env=env)
-    LOGGER.info(f'Restored {c.db.database} from {from_file}')
+    print(t.green(f'Restored {c.db.database} from {from_file}'))
 
 
 def is_database_existed(c, env):
@@ -137,7 +137,7 @@ def is_database_existed(c, env):
 @transactional
 async def execute_migration_scripts(db: DBClient, from_version: int, to_version: int, versions: Dict[int, Path]):
     for version in range(from_version + 1, to_version + 1):
-        LOGGER.info(f'Applying version: {version}')
+        print(f'Applying version: {version}')
         await db.execute(versions[version].read_text(encoding='UTF-8'))
     await db.insert('database_migration', from_version=from_version, to_version=to_version,
                     migrated_at=dt.datetime.now(dt.timezone.utc))
