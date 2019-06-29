@@ -1,15 +1,14 @@
 from typing import List
 
-from pydantic import BaseModel
-
 from fas.util.database import DBClient
+from .entity import Entity
 
 __all__ = ['Organization', 'list_organizations', 'create_organization', 'get_organization', 'update_organization',
            'delete_organization']
 
 
-class Organization(BaseModel):
-    id: int
+class Organization(Entity):
+    id: int = 0
     name: str
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 import inspect
 import logging
-from typing import Any, Dict, Optional, Tuple, Union, Sequence, Callable, List, AsyncGenerator
+from typing import Any, Optional, Tuple, Union, Sequence, Callable, List, AsyncGenerator, Mapping
 
 import asyncpg
 import asyncpg.transaction
@@ -28,11 +28,11 @@ class DBInterface(abc.ABC):
 
     @abc.abstractmethod
     async def acquire(self) -> DBInterface:
-        raise NotImplementedError('This is an abstract property, should not come here')
+        raise NotImplementedError('This is an abstract method, should not come here')
 
     @abc.abstractmethod
     async def release(self) -> None:
-        raise NotImplementedError('This is an abstract property, should not come here')
+        raise NotImplementedError('This is an abstract method, should not come here')
 
     async def _acquire_if_necessary(self) -> None:
         if not self.is_connected:
@@ -50,7 +50,8 @@ class DBInterface(abc.ABC):
     async def execute(self, sql: str, *, timeout: float = None, **kwargs: Any) -> int:
         return await self._execute(sql, timeout=timeout, **kwargs)
 
-    async def executemany(self, sql: str, args: Sequence, *, should_insert=None, timeout: float = None) -> None:
+    async def executemany(self, sql: str, args: Sequence[Mapping[str, Any]], *, should_insert=None,
+                          timeout: float = None) -> None:
         if should_insert:
             args = [e for e in args if should_insert(e)]
         if not args:
@@ -94,7 +95,7 @@ class DBInterface(abc.ABC):
             raise Exception(f'More than one columns returned: sql={sql} and kwargs={kwargs}')
         return to_cls(**rows[0][0]) if to_cls else rows[0][0]
 
-    async def insert(self, table: str, objects: Optional[Union[Dict[str, Any], Sequence]] = None, *,
+    async def insert(self, table: str, objects: Optional[Sequence] = None, *,
                      return_id: Union[bool, str, Tuple[str]] = False, return_record: Union[bool, Tuple[str]] = False,
                      to_cls: Optional[Callable[[Any], Any]] = None,
                      should_insert: Optional[Callable[[Any], bool]] = None, include_attrs: Optional[Tuple[str]] = None,
@@ -229,7 +230,7 @@ class DBInterface(abc.ABC):
         except (ValueError, AttributeError, IndexError):
             return 0
 
-    async def _executemany(self, sql: str, args: Sequence, *, timeout: float = None) -> None:
+    async def _executemany(self, sql: str, args: Sequence[Mapping[str, Any]], *, timeout: float = None) -> None:
         query, args = render(sql, args)
         await self._acquire_if_necessary()
         LOGGER.debug(f'query: {query} \nargs: {args}')

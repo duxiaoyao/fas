@@ -87,6 +87,12 @@ async def test_get_scalar(db: DBClient):
 @pytest.mark.asyncio
 async def test_insert(db: DBClient):
     name3 = 'Org#3'
+    assert name3 == await db.insert('organization', return_id=('name',), id=3, name=name3)
+
+
+@pytest.mark.asyncio
+async def test_insert_objects(db: DBClient):
+    name3 = 'Org#3'
     name4 = 'Org#4'
     assert [name3, name4] == await db.insert('organization',
                                              [Organization(id=3, name=name3), Organization(id=4, name=name4)],
