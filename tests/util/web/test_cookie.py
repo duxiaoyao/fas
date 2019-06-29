@@ -1,5 +1,5 @@
 import time
-from typing import Callable
+from typing import Callable, Union
 
 import pytest
 from starlette.requests import Request
@@ -10,17 +10,19 @@ from fas.util.web import get_cookie, set_cookie, get_secure_cookie, set_secure_c
 from . import present, past
 
 
+@pytest.mark.parametrize('value', ['|', ' ', 'val|', 'va|l', 'va l', 'Hello, | cookies!'])
+@pytest.mark.parametrize('name', ['key', 'key1', '_key', 'key_', 'ke_y'])
 @pytest.mark.parametrize('get_cookie_, set_cookie_',
                          [(get_cookie, set_cookie), (get_secure_cookie, set_secure_cookie)])
-def test_cookies(get_cookie_: Callable, set_cookie_: Callable):
+def test_cookie(get_cookie_: Callable, set_cookie_: Callable, name: str, value: Union[str, bytes]):
     async def app(scope, receive, send):
         request = Request(scope, receive)
-        mycookie = get_cookie_(request, 'mycookie')
+        mycookie = get_cookie_(request, name)
         if mycookie:
             response = Response(mycookie, media_type='text/plain')
         else:
             response = Response('Hello, world!', media_type='text/plain')
-            set_cookie_(response, 'mycookie', 'Hello, cookies!')
+            set_cookie_(response, name, value)
 
         await response(scope, receive, send)
 
@@ -28,17 +30,32 @@ def test_cookies(get_cookie_: Callable, set_cookie_: Callable):
     response = client.get('/')
     assert response.text == 'Hello, world!'
     response = client.get('/')
-    assert response.text == 'Hello, cookies!'
+    assert response.text == value
 
 
+@pytest.mark.parametrize('name', ['|', '|key', 'ke|y', 'key|', '', ' ', 'ke y', '1key', 'ke-y'])
 @pytest.mark.parametrize('set_cookie_', [set_cookie, set_secure_cookie])
-@pytest.mark.parametrize('name', ['|', '|key', 'ke|y', 'key|'])
-def test_bad_cookie_names(set_cookie_: Callable, name):
+def test_bad_cookie_name(set_cookie_: Callable, name: str):
     async def app(scope, receive, send):
         response = Response('Hello, world!', media_type='text/plain')
         with pytest.raises(ValueError) as e:
             set_cookie_(response, name, 'Hello, cookies!')
         assert str(e.value) == f'Invalid cookie name: {repr(name)}'
+
+        await response(scope, receive, send)
+
+    client = TestClient(app)
+    client.get('/')
+
+
+@pytest.mark.parametrize(('value', 'exc_type'), [(None, ValueError), (b'\x9c', UnicodeDecodeError)])
+@pytest.mark.parametrize('set_cookie_', [set_cookie, set_secure_cookie])
+def test_bad_cookie_value(set_cookie_: Callable, value: Union[str, bytes],
+                          exc_type: Union[ValueError, UnicodeDecodeError]):
+    async def app(scope, receive, send):
+        response = Response('Hello, world!', media_type='text/plain')
+        with pytest.raises(exc_type):
+            set_cookie_(response, 'key', value)
 
         await response(scope, receive, send)
 

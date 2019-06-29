@@ -125,7 +125,6 @@
             "hashes": [
                 "sha256:e00cbd7ba01ff748e494248183abc6e153f49181169d8a3d41bb49132ca01dfc"
             ],
-            "markers": "sys_platform != 'win32' and sys_platform != 'cygwin' and platform_python_implementation != 'pypy'",
             "version": "==0.0.13"
         },
         "invoke": {
@@ -189,9 +188,9 @@
         },
         "uvicorn": {
             "hashes": [
-                "sha256:62871b3da0db0f398ef9ec87914737cc479f5f2c36c2be8f9fbbabf73a09b66c"
+                "sha256:a7f41b8a132810431f0e1d2a40fe123e5c9deac1baf1ea11dd381728647c2591"
             ],
-            "version": "==0.8.2"
+            "version": "==0.8.3"
         },
         "uvloop": {
             "hashes": [
@@ -206,7 +205,6 @@
                 "sha256:c48692bf4587ce281d641087658eca275a5ad3b63c78297bbded96570ae9ce8f",
                 "sha256:fefc3b2b947c99737c348887db2c32e539160dcbeb7af9aa6b53db7a283538fe"
             ],
-            "markers": "sys_platform != 'win32' and sys_platform != 'cygwin' and platform_python_implementation != 'pypy'",
             "version": "==0.12.2"
         },
         "websockets": {

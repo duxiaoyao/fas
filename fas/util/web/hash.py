@@ -53,7 +53,7 @@ def decode_signed_value(secret: Union[str, bytes], value: Union[None, str, bytes
         return None
     value = utf8(value)
     try:
-        value_field, timestamp, passed_sig = value.split(b'|')
+        value_field, timestamp, passed_sig = value.split(b'|', maxsplit=2)
     except ValueError:
         return None
 

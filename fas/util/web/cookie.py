@@ -41,6 +41,8 @@ def set_cookie(response: Response, name: str, value: Union[str, bytes], *, domai
     if not name.isidentifier():
         # Don't let us accidentally inject bad stuff
         raise ValueError(f'Invalid cookie name: {repr(name)}')
+    if value is None:
+        raise ValueError(f'Invalid cookie value: {repr(value)}')
     value = unicode(value)
     cookie = http.cookies.SimpleCookie()
     cookie[name] = value
@@ -63,35 +65,7 @@ def set_cookie(response: Response, name: str, value: Union[str, bytes], *, domai
     if samesite:
         parts.append(f'SameSite={http.cookies._quote(samesite)}')
     cookie_val = '; '.join(parts)
-    response.raw_headers.append((b'set-cookie', cookie_val.encode("latin-1")))
-
-
-def delete_cookie(response: Response, name: str, *, domain: Optional[str] = None, path: str = '/') -> None:
-    """Deletes the cookie with the given name.
-
-    Due to limitations of the cookie protocol, you must pass the same
-    path and domain to clear a cookie as were used when that cookie
-    was set (but there is no way to find out on the server side
-    which values were used for a given cookie).
-
-    Similar to `set_cookie`, the effect of this method will not be
-    seen until the following request.
-    """
-    expires = datetime.utcnow() - timedelta(days=365)
-    set_cookie(response, name, value='', domain=domain, path=path, expires=expires, max_age=-1)
-
-
-def delete_all_cookies(request: Request, response: Response, *, domain: Optional[str] = None, path: str = '/') -> None:
-    """Deletes all the cookies the user sent with this request.
-
-    See `clear_cookie` for more information on the path and domain
-    parameters.
-
-    Similar to `set_cookie`, the effect of this method will not be
-    seen until the following request.
-    """
-    for name in request.cookies:
-        delete_cookie(response, name, domain=domain, path=path)
+    response.raw_headers.append((b'set-cookie', cookie_val.encode('latin-1')))
 
 
 def get_secure_cookie(request: Request, name: str, *, max_age_days: int = 31,
@@ -114,7 +88,7 @@ def get_secure_cookie(request: Request, name: str, *, max_age_days: int = 31,
     if signed_value is None:
         return None
     try:
-        _, passed_name, value = signed_value.split(b'|')
+        _, passed_name, value = signed_value.split(b'|', maxsplit=2)
     except ValueError:
         return None
     if passed_name != utf8(name):
@@ -149,11 +123,42 @@ def set_secure_cookie(response: Response, name: str, value: Union[str, bytes], *
     if not name.isidentifier():
         # Don't let us accidentally inject bad stuff
         raise ValueError(f'Invalid cookie name: {repr(name)}')
+    if value is None:
+        raise ValueError(f'Invalid cookie value: {repr(value)}')
+    value = unicode(value)
     version = b'1'  # the version of the format of secured cookie, reserved for possible future changes
     value_to_sign = b'|'.join([version, utf8(name), utf8(value)])
     signed_value = create_signed_value(secret, value_to_sign, with_timestamp=True)
     set_cookie(response, name, signed_value, domain=domain, path=path, expires=expires, expires_days=expires_days,
                max_age=max_age, secure=secure, httponly=httponly, samesite=samesite)
+
+
+def delete_cookie(response: Response, name: str, *, domain: Optional[str] = None, path: str = '/') -> None:
+    """Deletes the cookie with the given name.
+
+    Due to limitations of the cookie protocol, you must pass the same
+    path and domain to clear a cookie as were used when that cookie
+    was set (but there is no way to find out on the server side
+    which values were used for a given cookie).
+
+    Similar to `set_cookie`, the effect of this method will not be
+    seen until the following request.
+    """
+    expires = datetime.utcnow() - timedelta(days=365)
+    set_cookie(response, name, value='', domain=domain, path=path, expires=expires, max_age=-1)
+
+
+def delete_all_cookies(request: Request, response: Response, *, domain: Optional[str] = None, path: str = '/') -> None:
+    """Deletes all the cookies the user sent with this request.
+
+    See `clear_cookie` for more information on the path and domain
+    parameters.
+
+    Similar to `set_cookie`, the effect of this method will not be
+    seen until the following request.
+    """
+    for name in request.cookies:
+        delete_cookie(response, name, domain=domain, path=path)
 
 
 def format_http_timestamp(ts: Union[int, float, tuple, time.struct_time, datetime]) -> str:
