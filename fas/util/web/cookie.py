@@ -145,7 +145,7 @@ def delete_cookie(response: Response, name: str, *, domain: Optional[str] = None
     seen until the following request.
     """
     expires = datetime.utcnow() - timedelta(days=365)
-    set_cookie(response, name, value='', domain=domain, path=path, expires=expires, max_age=-1)
+    set_cookie(response, name, value='', domain=domain, path=path, expires=expires, max_age=0)
 
 
 def delete_all_cookies(request: Request, response: Response, *, domain: Optional[str] = None, path: str = '/') -> None:

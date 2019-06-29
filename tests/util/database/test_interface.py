@@ -6,6 +6,17 @@ from fas.util.database import DBClient
 
 @pytest.mark.asyncio
 @pytest.fixture(autouse=True)
+async def rollback_db(db: DBClient):
+    tr = await db.transaction()
+    await tr.start()
+    try:
+        yield
+    finally:
+        await tr.rollback()
+
+
+@pytest.mark.asyncio
+@pytest.fixture(autouse=True)
 async def test_data(db: DBClient):
     await db.list("INSERT INTO organization (name) VALUES ('Org#1'), ('Org#2')")
 

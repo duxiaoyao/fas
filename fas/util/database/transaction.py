@@ -26,9 +26,8 @@ class TransactionDecorator:
             if db.is_in_transaction:
                 return await func(db, *args, **kwargs)
             else:
-                await db._acquire_if_necessary()
-                async with db._transaction_after_connected(isolation=self.isolation, readonly=self.readonly,
-                                                           deferrable=self.deferrable):
+                async with await db.transaction(isolation=self.isolation, readonly=self.readonly,
+                                                deferrable=self.deferrable):
                     return await func(db, *args, **kwargs)
 
         return wrapper

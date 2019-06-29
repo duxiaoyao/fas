@@ -47,10 +47,6 @@ class DBInterface(abc.ABC):
         await self._acquire_if_necessary()
         return self.conn.transaction(isolation=isolation, readonly=readonly, deferrable=deferrable)
 
-    def _transaction_after_connected(self, *, isolation: str = 'read_committed', readonly: bool = False,
-                                     deferrable: bool = False) -> asyncpg.transaction.Transaction:
-        return self.conn.transaction(isolation=isolation, readonly=readonly, deferrable=deferrable)
-
     async def execute(self, sql: str, *, timeout: float = None, **kwargs: Any) -> int:
         return await self._execute(sql, timeout=timeout, **kwargs)
 

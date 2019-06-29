@@ -27,14 +27,3 @@ async def db() -> DBClient:
     async with DBPool(**settings.DB) as pool:
         async with pool.acquire() as db:
             yield db
-
-
-@pytest.mark.asyncio
-@pytest.fixture(autouse=True)
-async def rollback_db(db: DBClient):
-    tr = await db.transaction()
-    await tr.start()
-    try:
-        yield
-    finally:
-        await tr.rollback()
