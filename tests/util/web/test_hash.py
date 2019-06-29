@@ -1,7 +1,5 @@
 from fas.util.web import hash_password, verify_password
 
-SECRET = "It's a secret to everybody"
-
 
 def test_hash_password():
     assert verify_password(hash_password('pass1'), 'pass1')
