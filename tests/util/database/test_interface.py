@@ -86,8 +86,21 @@ async def test_get_scalar(db: DBClient):
 
 @pytest.mark.asyncio
 async def test_insert(db: DBClient):
-    name3 = 'Org#3'
-    assert name3 == await db.insert('organization', return_id=('name',), id=3, name=name3)
+    prefix = 'Org#'
+    id = 0
+    id = 1 + await db.insert('organization', return_id=True, name=f'{prefix}{id}')
+    assert f'{prefix}{id}' == await db.insert('organization', return_id=('name',), name=f'{prefix}{id}')
+    id += 1
+    name = f'{prefix}{id}'
+    org = Organization(name=f'{prefix}{id}')
+    assert name == await db.insert('organization', return_id=('name',), **org)
+    id += 1
+    org = await db.insert('organization', return_record=True, to_cls=Organization, id=id, name=f'{prefix}{id}')
+    assert id == org.id
+    assert f'{prefix}{id}' == org.name
+    id += 1
+    org = Organization(id=id, name=f'{prefix}{id}')
+    assert org == await db.insert('organization', return_record=True, to_cls=Organization, **org)
 
 
 @pytest.mark.asyncio
@@ -97,6 +110,11 @@ async def test_insert_objects(db: DBClient):
     assert [name3, name4] == await db.insert('organization',
                                              [Organization(id=3, name=name3), Organization(id=4, name=name4)],
                                              return_id=('name',), include_attrs=('name',))
+    name5 = 'Org#5'
+    assert [name5] == await db.insert('organization', [Organization(id=5, name=name5)], return_id=('name',),
+                                      exclude_attrs=('id',))
+    name6 = 'Org#6'
+    assert [name6] == await db.insert('organization', [Organization(name=name6)], return_id=('name',))
 
 
 @pytest.mark.asyncio

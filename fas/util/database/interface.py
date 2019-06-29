@@ -8,6 +8,7 @@ from typing import Any, Optional, Tuple, Union, Sequence, Callable, List, AsyncG
 import asyncpg
 import asyncpg.transaction
 
+from .entity import Entity
 from .parameter import render
 
 LOGGER = logging.getLogger(__name__)
@@ -126,6 +127,8 @@ class DBInterface(abc.ABC):
                 columns += tuple(a for a in include_attrs if a not in exclude_attrs and a not in columns)
             elif include_attrs is None:
                 some_object = next(iter(objects))
+                if isinstance(some_object, Entity):
+                    some_object = some_object.fields
                 if isinstance(some_object, dict):
                     columns += tuple(k for k in some_object if k not in exclude_attrs and k not in columns)
                 elif not columns:

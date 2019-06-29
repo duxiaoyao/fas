@@ -14,6 +14,13 @@ class Entity(BaseModel):
     def identifiable(self) -> bool:
         return self.id > 0
 
+    def keys(self):
+        fields_keys = self.fields.keys()
+        return fields_keys if self.identifiable else (k for k in fields_keys if k not in self.primary_key)
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
     def __eq__(self, other: Any) -> bool:
         if not self.identifiable:
             return super().__eq__(other)
