@@ -1,5 +1,6 @@
 from .hash import hash_password
 from .hash import verify_password
+from .hash import generate_password
 from .hash import create_signed_value
 from .hash import decode_signed_value
 
@@ -13,6 +14,7 @@ from .cookie import delete_all_cookies
 __all__ = [
     hash_password.__name__,
     verify_password.__name__,
+    generate_password.__name__,
     create_signed_value.__name__,
     decode_signed_value.__name__,
 

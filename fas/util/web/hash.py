@@ -1,6 +1,8 @@
 import base64
 import hashlib
 import hmac
+import random
+import string
 import time
 from typing import Union, Optional
 
@@ -23,6 +25,13 @@ def verify_password(password_hash: Union[str, bytes], plain_password: Union[str,
         return False
     else:
         return True
+
+
+READABLE_ALPHANUMERIC = (string.ascii_letters + string.digits).translate(str.maketrans('', '', '0oO1l'))
+
+
+def generate_password(*, size: int = 8, charset: str = READABLE_ALPHANUMERIC) -> str:
+    return ''.join(random.choices(charset, k=size))
 
 
 def create_signed_value(secret: Union[str, bytes], value: Union[str, bytes], *, with_timestamp: bool = False) -> bytes:
