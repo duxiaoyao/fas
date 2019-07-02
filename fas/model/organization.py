@@ -1,6 +1,7 @@
 from typing import List
 
-from fas.util.database import Entity, DBClient
+from fas.util.database import DBClient
+from fas.util.model import Entity
 
 __all__ = ['Organization', 'list_organizations', 'create_organization', 'get_organization', 'update_organization',
            'delete_organization']

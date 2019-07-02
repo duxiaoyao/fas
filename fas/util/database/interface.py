@@ -8,7 +8,7 @@ from typing import Any, Optional, Tuple, Union, Sequence, Callable, List, AsyncG
 import asyncpg
 import asyncpg.transaction
 
-from .entity import Entity
+from fas.util.model import Entity
 from .parameter import render
 
 LOGGER = logging.getLogger(__name__)

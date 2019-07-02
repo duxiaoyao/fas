@@ -6,7 +6,7 @@ from starlette.requests import Request
 
 from fas.model.organization import *
 from fas.util.database import UniqueViolationError
-from .models import ResourceID, Message
+from fas.util.model import ResourceID, Message
 
 LOGGER = logging.getLogger(__name__)
 
