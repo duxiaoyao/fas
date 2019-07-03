@@ -1,20 +1,28 @@
 [default]
 debug = false
+
 db = {host='localhost', port=5432, user='eric', database='fas'}
 db_owner = {name='eric'}
 
+
 [development]
 #debug = true
+
 db = {min_size=2, max_size=5, dynaconf_merge=true}
+
 
 [staging]
 value = 'value for staging'
 
+
 [testing]
 #debug = true
+
 db = {database='fas-t', min_size=2, max_size=5, dynaconf_merge=true}
 
+
 [production]
+
 
 [global]
 value = 'value for global'

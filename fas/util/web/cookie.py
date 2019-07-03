@@ -126,7 +126,7 @@ def set_secure_cookie(response: Response, name: str, value: Union[str, bytes], *
     if value is None:
         raise ValueError(f'Invalid cookie value: {repr(value)}')
     value = unicode(value)
-    version = b'1'  # the version of the format of secured cookie, reserved for possible future changes
+    version = b'1'  # the version of the format of secured cookie, reserved for possible future upgrade
     value_to_sign = b'|'.join([version, utf8(name), utf8(value)])
     signed_value = create_signed_value(secret, value_to_sign, with_timestamp=True)
     set_cookie(response, name, signed_value, domain=domain, path=path, expires=expires, expires_days=expires_days,

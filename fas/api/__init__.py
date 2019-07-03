@@ -38,6 +38,14 @@ async def inject_database_connection_to_request(request: Request, call_next):
                 pass
 
 
+@app.middleware('http')
+async def add_response_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers['Content-Type'] = 'application/json; charset=utf-8'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    return response
+
+
 @app.get('/')
 def read_root():
     return {'Hello': 'World'}
