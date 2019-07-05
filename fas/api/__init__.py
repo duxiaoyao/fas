@@ -39,9 +39,8 @@ async def inject_database_connection_to_request(request: Request, call_next):
 
 
 @app.middleware('http')
-async def add_response_headers(request: Request, call_next):
+async def add_custom_headers(request: Request, call_next):
     response = await call_next(request)
-    response.headers['Content-Type'] = 'application/json; charset=utf-8'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     return response
 
@@ -51,5 +50,6 @@ def read_root():
     return {'Hello': 'World'}
 
 
-app.include_router(organization.router, prefix='/organizations', tags=['organizations'])
 app.include_router(operator.router, prefix='/operators', tags=['operators'])
+app.include_router(organization.router, prefix='/organizations', dependencies=[operator.require_auth(is_admin=True)],
+                   tags=['organizations'])

@@ -11,7 +11,7 @@ CREATE TABLE operator (
     organization_id INT NOT NULL REFERENCES organization,
     name TEXT CHECK(LENGTH(name)<=32) NOT NULL,
     mobile TEXT CHECK(LENGTH(mobile)=11) NOT NULL,
-    password TEXT,
+    password_hash TEXT,
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     active BOOLEAN NOT NULL,
 
@@ -21,7 +21,7 @@ COMMENT ON TABLE operator IS '操作员';
 COMMENT ON COLUMN operator.organization_id IS '所属组织ID';
 COMMENT ON COLUMN operator.name IS '姓名';
 COMMENT ON COLUMN operator.mobile IS '手机号：一个组织内有效的操作员手机号唯一';
-COMMENT ON COLUMN operator.password IS '密码：不可逆加密存储';
+COMMENT ON COLUMN operator.password_hash IS '密码哈希：不可逆的密码哈希';
 COMMENT ON COLUMN operator.is_admin IS '是否是组织管理员';
 COMMENT ON COLUMN operator.active IS '是否有效：失效的操作员账号不可用';
 

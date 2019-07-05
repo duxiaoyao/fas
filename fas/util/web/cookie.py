@@ -68,7 +68,7 @@ def set_cookie(response: Response, name: str, value: Union[str, bytes], *, domai
     response.raw_headers.append((b'set-cookie', cookie_val.encode('latin-1')))
 
 
-def get_secure_cookie(request: Request, name: str, *, max_age_days: int = 31,
+def get_secure_cookie(request: Request, name: str, *, max_age_days: Optional[int] = 31,
                       secret: Optional[Union[str, bytes]] = None) -> Optional[str]:
     """Returns the given signed cookie if it validates, or None.
 

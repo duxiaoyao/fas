@@ -4,7 +4,8 @@ from typing import Union, Callable, Any
 from . import DBClient
 
 
-def transactional(isolation: Union[str, Callable] = 'read_committed', readonly: bool = False, deferrable: bool = False):
+def transactional(isolation: Union[str, Callable] = 'read_committed', readonly: bool = False,
+                  deferrable: bool = False) -> Callable:
     if callable(isolation):
         func = isolation
         return TransactionDecorator()(func)
@@ -15,7 +16,7 @@ def transactional(isolation: Union[str, Callable] = 'read_committed', readonly: 
 class TransactionDecorator:
     __slots__ = ('isolation', 'readonly', 'deferrable')
 
-    def __init__(self, *, isolation: str = 'read_committed', readonly: bool = False, deferrable: bool = False):
+    def __init__(self, *, isolation: str = 'read_committed', readonly: bool = False, deferrable: bool = False) -> None:
         self.isolation: str = isolation
         self.readonly: bool = readonly
         self.deferrable: bool = deferrable

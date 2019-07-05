@@ -21,7 +21,8 @@ async def list(request: Request):
 @router.post('/', response_model=ResourceID, status_code=201, responses={409: {'model': Message}})
 async def create(request: Request, name: str = Body(..., min_length=2, max_length=32)):
     try:
-        return ResourceID(id=await create_organization(request.state.db, name))
+        org = await create_organization(request.state.db, name)
+        return ResourceID(id=org.id)
     except UniqueViolationError:
         err_msg = f'name `{name}` is already used'
         LOGGER.exception(f'Cannot create organization: {err_msg}')
