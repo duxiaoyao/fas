@@ -36,7 +36,7 @@ async def login(request: Request, response: Response, organization_id: int, ol: 
     set_secure_cookie(response, OPERATOR_COOKIE_NAME, str(operator.id), path='/', expires_days=None)
 
 
-@router.get('/logout', status_code=204)
+@router.post('/logout', status_code=204)
 def logout(response: Response):
     delete_cookie(response, OPERATOR_COOKIE_NAME)
 
