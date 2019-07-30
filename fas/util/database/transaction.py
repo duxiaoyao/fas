@@ -1,7 +1,7 @@
 import functools
 from typing import Union, Callable, Any
 
-from . import DBClient
+from .interface import DBInterface
 
 
 def transactional(isolation: Union[str, Callable] = 'read_committed', readonly: bool = False,
@@ -23,7 +23,10 @@ class TransactionDecorator:
 
     def __call__(self, func: Callable) -> Callable:
         @functools.wraps(func)
-        async def wrapper(db: DBClient, *args: Any, **kwargs: Any) -> Any:
+        async def wrapper(db: DBInterface, *args: Any, **kwargs: Any) -> Any:
+            if not isinstance(db, DBInterface):
+                raise AssertionError(
+                    f'The first argument of a transactional function should be a DBInterface instance, not {type(db)}')
             if db.is_in_transaction:
                 return await func(db, *args, **kwargs)
             else:
