@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from dynaconf import settings
 
@@ -48,6 +50,10 @@ async def test_transactional_decorator():
     async def func(db_: DBClient, *, raise_exception: bool = False) -> None:
         await _func(db_, raise_exception=raise_exception)
 
+    @transactional
+    async def func_without_db_as_first_parameter(_: Any, db_: DBClient) -> None:
+        await db_.try_transaction_lock(123)
+
     async with DBPool(**settings.DB) as pool:
         async with pool.acquire() as db:
             await func(db)
@@ -55,6 +61,9 @@ async def test_transactional_decorator():
             with pytest.raises(Exception):
                 await func(db, raise_exception=True)
             await verify_rolled_back(db)
+
+            with pytest.raises(AssertionError):
+                await func_without_db_as_first_parameter('any', db)
 
 
 name = 'ORG#1'
@@ -77,3 +86,25 @@ async def verify_committed(db):
 async def verify_rolled_back(db):
     assert not await db.exists('SELECT name FROM organization WHERE name=:name', name=name)
     assert not await db.exists('SELECT name FROM organization WHERE name=:name', name=new_name)
+
+
+lock_key = 123
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('exclusive', [True, False])
+async def test_try_transaction_lock(db: DBClient, exclusive: bool):
+    async with await db.transaction():
+        assert await db.try_transaction_lock(lock_key, exclusive=exclusive)
+        assert await db.try_transaction_lock(lock_key, exclusive=exclusive)
+
+        async with DBPool(**settings.DB) as pool:
+            async with pool.acquire() as another_db:
+                async with await another_db.transaction():
+                    assert (await another_db.try_transaction_lock(lock_key, exclusive=exclusive)) is not exclusive
+
+
+@pytest.mark.asyncio
+async def test_try_transaction_lock_raise_exception_while_not_in_transaction(db: DBClient):
+    with pytest.raises(Exception):
+        await db.try_transaction_lock(lock_key)

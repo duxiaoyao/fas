@@ -48,6 +48,15 @@ class DBInterface(abc.ABC):
         await self._acquire_if_necessary()
         return self.conn.transaction(isolation=isolation, readonly=readonly, deferrable=deferrable)
 
+    async def try_transaction_lock(self, key: int, *, exclusive: bool = True, timeout: float = None) -> bool:
+        if not self.is_in_transaction:
+            raise Exception('Failed trying to obtain transaction level advisory lock: not within a transaction')
+        if exclusive:
+            sql = f'SELECT PG_TRY_ADVISORY_XACT_LOCK(:key)'
+        else:
+            sql = f'SELECT PG_TRY_ADVISORY_XACT_LOCK_SHARED(:key)'
+        return await self.get_scalar(sql, timeout=timeout, key=key)
+
     async def execute(self, sql: str, *, timeout: float = None, **kwargs: Any) -> int:
         return await self._execute(sql, timeout=timeout, **kwargs)
 
