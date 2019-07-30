@@ -10,7 +10,7 @@ from invoke import task, Collection
 
 from fas.environment import ENV
 from .client import DBClient, DBPool
-from .migration import load_versions, lock_scripts
+from .migration import load_versions, lock_scripts, check_no_scripts_not_locked, check_no_locked_scripts_changed
 from .transaction import transactional
 
 t = Terminal()
@@ -54,6 +54,9 @@ def migrate_database(c):
     """
     Migrate database
     """
+    if not (ENV.is_dev or ENV.is_test):
+        check_no_scripts_not_locked()
+        check_no_locked_scripts_changed()
     create_database_if_not_exist(c)
     asyncio.run(_migrate_database(c.db.database))
 
