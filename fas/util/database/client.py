@@ -23,6 +23,7 @@ class DBPool:
 
     def __init__(self, dsn: str = None, *, close_timeout: float = None, min_size: int = 10, max_size: int = 10,
                  setup: Any = None, init: Any = None, **connect_kwargs: Any) -> None:
+        connect_kwargs.pop('box_it_up', None)  # TODO: remove this when DynaConf.Settings removes box_it_up
         self._options: Dict = dict(dsn=dsn, min_size=min_size, max_size=max_size, setup=setup,
                                    init=init or _set_automatic_json_conversion, **connect_kwargs)
         self._close_timeout: float = close_timeout

@@ -137,7 +137,7 @@ class DBInterface(abc.ABC):
             elif include_attrs is None:
                 some_object = next(iter(objects))
                 if isinstance(some_object, Entity):
-                    some_object = some_object.fields
+                    some_object = some_object.__fields__
                 if isinstance(some_object, dict):
                     columns += tuple(k for k in some_object if k not in exclude_attrs and k not in columns)
                 elif not columns:

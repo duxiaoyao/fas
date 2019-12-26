@@ -15,7 +15,7 @@ class Entity(BaseModel):
         return self.id > 0
 
     def keys(self):
-        fields_keys = self.fields.keys()
+        fields_keys = self.__fields__.keys()
         return fields_keys if self.identifiable else (k for k in fields_keys if k not in self.primary_key)
 
     def __getitem__(self, key):
