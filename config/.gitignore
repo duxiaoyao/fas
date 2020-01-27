@@ -1,3 +1,2 @@
-
-# Ignore dynaconf secret files
+# avoid checking into local settings
 *.toml
